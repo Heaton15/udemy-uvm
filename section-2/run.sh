@@ -36,6 +36,6 @@ if [[ $COMPILE -eq 1 ]]; then
 fi
 
 if [[ $RUN -eq 1 ]]; then
-  ./simv 
+  ./simv +ntb_random_seed_automatic
 fi
 
