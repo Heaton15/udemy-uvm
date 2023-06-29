@@ -222,3 +222,55 @@ class second extends uvm_object;
     `uvm_field_object(f, UVM_DEFAULT);
   `uvm_object_utils_end
 endclass
+
+// Let's say that in a future release of our code / tbs, we decide that we want
+// to add a new signal to the classes that we use. Create helps push these kind
+// of changes.
+
+class first_mod extends first;
+  rand bit ack;
+
+  `uvm_object_utils_begin(first_mod)
+    `uvm_field_int(ack, UVM_DEFAULT);
+  `uvm_object_utils_end
+endclass
+
+// override the first class requires a component, so let's use this for now and
+// talk about it later.
+class comp extends uvm_component;
+  `uvm_component_utils(comp)
+
+  first f;
+
+  function new(string path = "second", uvm_component parent = null);
+    super.new(path, parent);
+    f = first::type_id::create("f");
+    f.randomize();
+    f.print();
+  endfunction
+endclass
+
+class obj_do extends uvm_object;
+  `uvm_object_utils(obj_do)
+
+  function new(string path = "obj_do");
+    super.new(path);
+  endfunction
+  
+  bit [3:0] a = 4;
+  string b = "UVM";
+  real c = 12.34;
+
+  // NOTE: Because we are using the do_* methods, we do not have to register
+  // this with the Field Macros. Just registert with `uvm_object_utils
+  
+  // virtual -> extended class will be called instead of base 
+  virtual function void do_print(uvm_printer printer);
+    super.do_print(printer)
+    printer.print_field_int("a", a, $bits(a), UVM_HEX);
+    printer.print_string("b", b);
+    printer.print_real("c", c);
+  endfunction
+
+
+endclass
