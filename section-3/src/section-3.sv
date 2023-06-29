@@ -84,10 +84,10 @@ Using these requires you to specify how they will work
 */
 
 module tb;
-  first f;
+  fData f;
   initial begin
     f = new();
-    f.randomize(); // randomize all rand items
+    f.randomize();  // randomize all rand items
     $display("Value of data: %0d", f.data);
   end
 endmodule
@@ -101,4 +101,164 @@ module tb_obj;
     `uvm_info("TB_TOP", $sformatf("a: %0d", o.a), UVM_NONE);
   end
 
+endmodule
+
+module tb_macros_explained;
+  obj_macros_explained o;
+
+  initial begin
+    o = new("obj");
+    o.randomize();
+    o.print();  // Only available when fields / variables are registered to the factory
+  end
+endmodule
+
+module tb_change_printer;
+  obj_macros_explained o;
+
+  initial begin
+    o = new("obj");
+    o.randomize();
+    o.print(
+        uvm_default_tree_printer); // Only available when fields / variables are registered to the factory
+    o.print(
+        uvm_default_line_printer); // Only available when fields / variables are registered to the factory
+  end
+endmodule
+
+module tb_field_macros;
+  obj_field_macros o;
+  initial begin
+    o = new("obj");
+    o.randomize();
+    o.print(uvm_default_table_printer);
+  end
+endmodule
+
+module tb_field_macros_obj;
+  child c;
+  initial begin
+    c = new("child");
+    c.p.randomize(); // -> NOTE: the rand variables are in the parent, so we have to run randomization 
+    c.print();
+  end
+endmodule
+
+module tb_array_field_macros;
+  array a;
+
+  initial begin
+    a = new("array");
+    a.run();
+    a.print();
+  end
+endmodule
+
+module tb_copy;
+  first f;
+  first s;
+
+  initial begin
+    // We want to copy data into s
+    f = new("first");
+    s = new("second");
+    f.randomize();
+    s.copy(f);
+    f.print();
+    s.print();
+  end
+endmodule
+
+module tb_clone;
+  first f;
+  first s;
+
+  initial begin
+    f = new("first");
+    s = new("second");
+    f.randomize();
+
+    /* This is an error because when you clone, you get a copy of the parent
+       class. f (class first) is a child of uvm_object, and when we do
+       s = f.clone(), you are saying that you want to assign s (class first) to
+       f (class uvm_object);
+
+       This is resolved by typecasting!
+    */
+
+    // Error: s = f.clone();
+    // https://verificationguide.com/systemverilog/systemverilog-casting/
+    $cast(s, f.clone());
+    f.print();
+    s.print();
+  end
+endmodule
+
+
+module tb_deep_vs_shallow;
+  /*  If we get an independent handle for original class / copied class, its deep
+   *  If  we get a single handle for both classes, its shallow
+  */
+  second s1, s2;
+
+  initial begin
+    s1 = new("s1");
+    s2 = new("s2");
+    s1.f.randomize();
+    s1.print();
+
+    /* Shallow Copy */
+    // copy s1 into s2
+    s2 = s1;
+    s2.print();
+    s2.f.data = 'hf;
+    // When you print both, you will see that both share data = 'h4;
+    // This change is seed by both instances, which means they share a handle.
+    // This is a shallow copy
+    s1.print();
+    s2.print();
+  end
+
+  /* Deep Copy */
+  // Can implement on you rown
+  // Or you can do s2.copy(s1);
+endmodule
+
+// Let's investigate more about copy / clone
+module tb_deepcopy;
+
+  // Important lessons learned here:
+  // 1. s2.copy(s1) -> Deep Copy
+  // 2. $cast(s3, s1.clone()) -> Deep Copy
+  second s1, s2;
+  second s3;
+
+  initial begin
+    s1 = new("s1");
+    s2 = new("s2");
+    s1.f.randomize();
+
+    s2.copy(s1);  // deep copy
+
+    s1.print();
+    s2.print();
+
+    s2.f.data = 12;
+
+    // As we can see here, this is a deep copy since only 1 handle is changed
+    s1.print();
+    s2.print();
+
+    // s3 does not need to be initialized
+    $cast(s3, s1.clone()); // Deep copy
+    s1.print();
+    s3.print();
+
+    s3.f.data = 12;
+    s1.print();
+    s3.print();
+  end
+endmodule
+
+module tb_compare;
 endmodule
