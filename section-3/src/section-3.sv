@@ -295,3 +295,46 @@ module tb_compare;
 
   end
 endmodule
+
+module tb_create;
+  // Up to now we have been creating our own classes with new();
+  // When in the UVM, the recommended way is to use the create() method so that
+  // the factory can override types like in a transaction class.
+
+  first f1, f2;
+
+  initial begin
+    // Do this in place of new()
+    f1 = first::type_id::create("f1");
+    f2 = first::type_id::create("f2");
+
+    f1.randomize();
+    f2.randomize();
+    f1.print();
+    f2.print();
+
+  end
+endmodule
+
+module tb_new_vs_create;
+  comp c;
+
+  initial begin
+    // comp c has a first f instance, so calling this new will initialize that
+    // f and then randomize / print the data. So what if we want to override
+    // first and instead use first_mod? We added new signals but we don't want
+    // to change the first class.
+    // c = comp::type_id::create("comp", null);
+    
+    // set_type_override_by_type(oldClass, newClass);
+    c.set_type_override_by_type(first::get_type, first_mod::get_type);
+    // Wherever you have a first instance, it will get replaced with first_mod
+    c = comp::type_id::create("comp", null);
+
+    // If we had not used the ::create() method, we would have to go back and
+    // search / replace all uses of class first with class first_mod. When
+    // maintaining larger code bases, updates like this become very difficult. 
+  end
+endmodule
+
+
