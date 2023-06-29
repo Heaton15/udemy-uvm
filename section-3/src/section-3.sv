@@ -250,7 +250,7 @@ module tb_deepcopy;
     s2.print();
 
     // s3 does not need to be initialized
-    $cast(s3, s1.clone()); // Deep copy
+    $cast(s3, s1.clone());  // Deep copy
     s1.print();
     s3.print();
 
@@ -261,4 +261,37 @@ module tb_deepcopy;
 endmodule
 
 module tb_compare;
+  // compare will be very useful when we start comparing objects, like in
+  // scoreboards
+
+  first f1, f2;
+  first f3, f4;
+  int status = 0;
+  int status2 = 0;
+  initial begin
+    f1 = new("f1");
+    f2 = new("f2");
+    f1.randomize();
+    f2.randomize();
+    f1.print();
+    f2.print();
+
+    // Compare Method now
+    status = f1.compare(f2);
+    // return 0 when different, return 1 when same
+    // Notice how the terminal output has a "Miscompare" notice
+    $display("status: %0d", status);
+
+    // Because we copied f3 into f4, the data will be the same and compare is
+    // correct
+    f3 = new("f3");
+    f4 = new("f4");
+    f3.randomize();
+    f4.copy(f3);
+    f3.print();
+    f4.print();
+    status2 = f3.compare(f4);
+    $display("status2: %0d", status2);
+
+  end
 endmodule
