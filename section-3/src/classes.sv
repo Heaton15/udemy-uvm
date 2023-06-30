@@ -256,21 +256,151 @@ class obj_do extends uvm_object;
   function new(string path = "obj_do");
     super.new(path);
   endfunction
-  
+
   bit [3:0] a = 4;
   string b = "UVM";
   real c = 12.34;
 
   // NOTE: Because we are using the do_* methods, we do not have to register
   // this with the Field Macros. Just registert with `uvm_object_utils
-  
+
   // virtual -> extended class will be called instead of base 
   virtual function void do_print(uvm_printer printer);
-    super.do_print(printer)
-    printer.print_field_int("a", a, $bits(a), UVM_HEX);
+    // This changes how we chose to display int, string, and reals
+    // not that print_field_int is not in uvm-1.2
+    super.do_print(printer);
+    printer.print_int("a", a, $bits(a), UVM_HEX);
     printer.print_string("b", b);
     printer.print_real("c", c);
   endfunction
+endclass
 
+class conv2str extends uvm_object;
+  /* do_print and convert2string have some differences
+  * do_print: uvm_printer pbject is required
+  * convert2string: uvm_printer no needed
+  *  - This can be used to disply the values of a data member in a single line
+  *  - If there are 3 data fields, you can display them all in one line as
+  *  a string 
+  */
+
+  `uvm_object_utils(conv2str)
+
+  function new(string path = "conv2str");
+    super.new(path);
+  endfunction
+
+  bit [3:0] a = 4;
+  string b = "UVM";
+  real c = 12.34;
+
+  virtual function string convert2string();
+    string s = super.convert2string();
+    // All we are doing here is appending a bunch of strings together
+    s = {s, $sformatf("a : %0d ", a)};
+    s = {s, $sformatf("b : %0s ", b)};
+    s = {s, $sformatf("c : %0f ", c)};
+    return s;
+  endfunction
+endclass
+
+class do_copy_class extends uvm_object;
+  `uvm_object_utils(do_copy_class)
+
+  function new(string path = "do_copy_class");
+    super.new(path);
+  endfunction
+
+  rand bit [3:0] a;
+  rand bit [4:0] b;
+
+  // Define a do_print method
+  virtual function void do_print(uvm_printer printer);
+    super.do_print(printer);
+    printer.print_int("a :", a, $bits(a), UVM_DEC);
+    printer.print_int("b :", b, $bits(b), UVM_DEC);
+  endfunction
+
+  // Similar to custom deep copy functions
+  virtual function void do_copy(uvm_object rhs);
+    do_copy_class tmp;  // Create a temporary class 
+    $cast(tmp, rhs);  // Typecast uvm_object to do_copy_class
+    super.do_copy(rhs);
+    this.a = tmp.a;
+    this.b = tmp.b;
+  endfunction
+endclass
+
+class do_compare_class extends uvm_object;
+  `uvm_object_utils(do_compare_class)
+
+  function new(string path = "do_compare_class");
+    super.new(path);
+  endfunction
+
+  rand bit [3:0] a;
+  rand bit [4:0] b;
+
+  virtual function void do_print(uvm_printer printer);
+    super.do_print(printer);
+    printer.print_int("a :", a, $bits(a), UVM_DEC);
+    printer.print_int("b :", b, $bits(b), UVM_DEC);
+  endfunction
+
+  virtual function void do_copy(uvm_object rhs);
+    do_compare_class tmp;  // Create a temporary class 
+    $cast(tmp, rhs);  // Typecast uvm_object to do_copy_class
+    super.do_copy(rhs);
+    this.a = tmp.a;
+    this.b = tmp.b;
+  endfunction
+
+  virtual function bit do_compare(uvm_object rhs, uvm_comparer comparer);
+    do_compare_class tmp;
+    int status = 0;
+    $cast(tmp, rhs);  // -> typecast uvm_object rhs to type tmp
+    status = super.do_compare(rhs, comparer) && (a == tmp.a) && (b == tmp.b);
+
+    // Recall that compare returns 0 if fail and 1 if pass
+    // A custom implementation is required to do something similar 
+    return status;
+  endfunction
+endclass
+
+class as1_obj extends uvm_object;
+  `uvm_object_utils(as1_obj)
+
+  function new(string path = "as1_obj");
+    super.new(path);
+  endfunction
+
+  rand bit [1:0] a;
+  rand bit [3:0] b;
+  rand bit [7:0] c;
+
+  virtual function void do_print(uvm_printer printer);
+    super.do_print(printer);
+    printer.print_int("a :", a, $bits(a), UVM_DEC);
+    printer.print_int("b :", b, $bits(b), UVM_DEC);
+    printer.print_int("c :", c, $bits(c), UVM_DEC);
+  endfunction
+endclass
+
+
+class as2_obj extends uvm_object;
+
+  function new(string path = "as2_obj");
+    super.new(path);
+  endfunction
+
+  rand bit [1:0] a;
+  rand bit [3:0] b;
+  rand bit [7:0] c;
+
+  `uvm_object_utils_begin(as2_obj)
+    `uvm_field_int(a, UVM_DEFAULT + UVM_HEX);  // Get default methods now
+    `uvm_field_int(b, UVM_DEFAULT + UVM_HEX);  // Get default methods now
+    `uvm_field_int(c, UVM_DEFAULT + UVM_HEX);  // Get default methods now
+  `uvm_object_utils_end
 
 endclass
