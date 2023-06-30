@@ -337,4 +337,91 @@ module tb_new_vs_create;
   end
 endmodule
 
+module tb_do_print;
+  obj_do o;
 
+  initial begin
+    o = obj_do::type_id::create("o");
+    o.print();
+  end
+endmodule
+
+module tb_conv2str;
+  conv2str c;
+
+  initial begin
+    c = conv2str::type_id::create("c");
+    $display("%0s", c.convert2string());
+    `uvm_info("TB_TOP", $sformatf("%0s", c.convert2string()), UVM_NONE);
+  end
+endmodule
+
+module tb_do_copy;
+  do_copy_class o1, o2;
+
+  initial begin
+    o1 = do_copy_class::type_id::create("o1");
+    o2 = do_copy_class::type_id::create("o2");
+
+    o1.randomize();
+    o2.randomize();
+    o1.print();
+    o2.print();
+    o2.copy(o1);
+    o1.print();
+    o2.print();
+  end
+endmodule
+
+module tb_do_compare;
+
+  do_compare_class o1, o2;
+  int status[2] = {0, 0};
+
+  initial begin
+    o1 = do_compare_class::type_id::create("o1");
+    o2 = do_compare_class::type_id::create("o2");
+
+    o1.randomize();
+    o1.randomize();
+    o1.print();
+    o2.print();
+
+    status[0] = o1.compare(o2);
+    // Once we copy o1 to o2, they are the same contents
+    o2.copy(o1);
+
+    o1.print();
+    o2.print();
+    status [1] = o1.compare(o2);
+    `uvm_info("TB_TOP", $sformatf("status[0]: %0d, status[1]: %0d", status[0], status[1]), UVM_NONE);
+
+  end
+endmodule
+
+module tb_as1;
+  as1_obj o;
+  initial begin 
+    o = as1_obj::type_id::create("o");
+    o.randomize();
+    o.print();
+  end
+endmodule
+
+module tb_as2;
+  as2_obj o1, o2;
+  int status;
+
+  initial begin
+    o1 = as2_obj::type_id::create("o1");
+    o2 = as2_obj::type_id::create("o2");
+
+    o1.randomize();
+
+    $cast(o2, o1.clone());
+    status = o2.compare(o1);
+    o2.print();
+    o1.print();
+    `uvm_info("TB_TOP", $sformatf("status: %0d", status), UVM_NONE);
+  end
+endmodule
