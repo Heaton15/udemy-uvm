@@ -1,5 +1,6 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
+`timescale 1ns/1ns
 
 /* This entire section is dedicated to the phases of UVM and what they do
    - Note that the phases are automatically called 
@@ -123,6 +124,74 @@ UVM Phase table
 
 
 
+How to Override Phases
 
+- Non time consuming phases are functions which we can overide
+- In overriding time consuming tasks, we override tasks instead
 
+- Commonly used phases
+  - build_phase
+  - connect_phase
 */
+
+
+module tb_override_phases;
+  initial begin
+    run_test("test");
+  end
+endmodule
+
+
+/*  Phases running top down can go from test -> env -> slo / agent -> mon/drv/seq
+*    - This means parents execute first and then we go to the children
+*
+*   Phases can also be ran botton up where the bottom of the tree executes first
+*     - mon/drv/seq -> agent -> env -> test -> uvm_top
+*
+*
+*   BUILD_PHASE runs top down
+*   OTHER PHASES run bottom up
+*/
+
+module tb_connect_phase;
+  initial begin
+    run_test("test_connect_phase");
+  end
+endmodule
+
+module tb_raising_objections;
+  initial begin
+    run_test("comp");
+  end
+endmodule
+
+
+// For multiple phases, time moves from phase to phase. Since reset phase comes
+// before main phase, a #100ns in reset will cause the main phase to start at
+// t=100ns for that component. 
+module tb_mult_phases;
+  initial begin
+    run_test("test_env_mult_phase");
+  end
+endmodule
+
+// By default, the timeout is 9200 seconds (huge)
+module tb_timeouts;
+  initial begin
+    // The test before required 500ns, so if we set the timeout to 200ns we
+    // should fail
+    uvm_top.set_timeout(200ns);
+    run_test("test_env_mult_phase");
+  end
+endmodule
+
+module tb_draintime;
+  // When you send a DUT data, sometimes you have to wait a certain amount of
+  // time for the data to enter and be responded to in the DUT. For example, you
+  // might need 10ns after the main_phase ends for the DUT to finish up. This
+  // time is the buffer time which in turn is called the drain time. 
+  initial begin
+    run_test("test_draintime");
+  end
+endmodule
+
