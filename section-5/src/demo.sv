@@ -223,7 +223,7 @@ endclass
      
       virtual function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-        if(!uvm_config_db#(virtual adder_if)::get(this,"","aif",aif))//uvm_test_top.env.agent.drv.aif
+        if(!uvm_config_db#(virtual adder_if)::get(this,"","aif",aif)) //uvm_test_top.env.agent.drv.aif
           `uvm_error("drv","Unable to access Interface");
       endfunction
       
@@ -247,17 +247,17 @@ endclass
     class agent extends uvm_agent;
     `uvm_component_utils(agent)
      
-      function new(input string inst = "agent", uvm_component c);
-    super.new(inst,c);
-    endfunction
+     function new(input string inst = "agent", uvm_component c);
+       super.new(inst,c);
+     endfunction
      
      drv d;
      
      
-    virtual function void build_phase(uvm_phase phase);
-    super.build_phase(phase);
-      d = drv::type_id::create("drv",this);
-    endfunction
+     virtual function void build_phase(uvm_phase phase);
+       super.build_phase(phase);
+       d = drv::type_id::create("drv",this);
+     endfunction
      
     endclass
      
@@ -267,16 +267,15 @@ endclass
     `uvm_component_utils(env)
      
       function new(input string inst = "env", uvm_component c);
-    super.new(inst,c);
-    endfunction
+        super.new(inst,c);
+      endfunction
      
-    agent a;
-     
-    virtual function void build_phase(uvm_phase phase);
-    super.build_phase(phase);
-      a = agent::type_id::create("agent",this);
-    endfunction
-     
+      agent a;
+       
+      virtual function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        a = agent::type_id::create("agent",this);
+      endfunction
     endclass
      
      
@@ -285,17 +284,15 @@ endclass
     `uvm_component_utils(test)
      
       function new(input string inst = "test", uvm_component c);
-    super.new(inst,c);
-    endfunction
+        super.new(inst,c);
+      endfunction
      
-    env e;
-     
-    virtual function void build_phase(uvm_phase phase);
-    super.build_phase(phase);
-      e = env::type_id::create("env",this);
-    endfunction
-     
-     
+      env e;
+       
+      virtual function void build_phase(uvm_phase phase);
+        super.build_phase(phase);
+        e = env::type_id::create("env",this);
+      endfunction
     endclass
      
      
