@@ -95,8 +95,37 @@ module tb_port_export_imp;
   end
 endmodule
 
+// This testbench provides an example of how the consumer is not needed and how
+// you can connect a producer to the imp and skip the consumer (recv)
+// definition. 
 module tb_port_imp_only;
   initial begin
     run_test("test_port_imp_only");
+  end
+endmodule
+
+// This testbench shows how a sub-producer inside of the producer can generate
+// the TLM and send that to the top level producer port. 
+module tb_port_to_port_to_imp;
+  initial begin
+    run_test("test_port_to_port_to_imp");
+  end
+endmodule
+
+// This testbench shows the opposite of the previous one. Here,
+// there is a port -> export -> imp -> subconsumer (imp) where a subconsumer is
+// inside of a consumer.
+module tb_port_to_export_to_imp;
+  initial begin
+    run_test("test_port_to_export_to_imp");
+  end
+endmodule
+
+// PUT is producer to consumer and data flow is the same.
+// GET is different because the producer sends request but the consumer will
+// send data
+module tb_port_get;
+  initial begin
+    run_test("test_port_get");
   end
 endmodule
