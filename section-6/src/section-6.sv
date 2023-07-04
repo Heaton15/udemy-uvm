@@ -180,7 +180,7 @@ module tb_timeouts;
   initial begin
     // The test before required 500ns, so if we set the timeout to 200ns we
     // should fail
-    uvm_top.set_timeout(200ns);
+    uvm_top.set_timeout(200ns); 
     run_test("test_env_mult_phase");
   end
 endmodule
@@ -190,8 +190,22 @@ module tb_draintime;
   // time for the data to enter and be responded to in the DUT. For example, you
   // might need 10ns after the main_phase ends for the DUT to finish up. This
   // time is the buffer time which in turn is called the drain time. 
+  
+  // IMPORTANT: You will NOT enter the main phase until ALL components have left
+  // the reset phase. a #500ns in a separate reset phase will delay the main
+  // phase of an object whose reset phase was maybe only #100ns.
   initial begin
     run_test("test_draintime");
   end
+endmodule
+
+module tb_uvm_debug;
+  // +UVM_PHASE_TRACE plusarg 
+  // This will allow you to analyze how the phases are operating and the
+  // ordering / execution. Take a look at the terminal output and you can see.
+  // It looks like it is a plusarg to just add on the ./simv
+  
+  // +UVM_OBJECTION_TRACE
+  // Allow you to debug the objections that are being called
 endmodule
 
