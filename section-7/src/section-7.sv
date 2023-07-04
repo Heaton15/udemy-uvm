@@ -129,3 +129,62 @@ module tb_port_get;
     run_test("test_port_get");
   end
 endmodule
+
+// If you have a situation where you need to send data both ways, you have to
+// use transport
+// You should see in the terminal output that the data sent from the producer is
+// what the consumer receives and that the data sent from the consumer is
+// received by the producer.
+module tb_transport;
+  initial begin
+    run_test("test_transport");
+  end
+endmodule
+
+/*
+*
+* An analysis port is when you want to broadcast the same data from a producer
+* to multiple components. 
+*
+* By default, port/export are 1 to 1, so this port is needed for multiple
+* connections
+*
+* With get/put ports, you can either be blocking or non-blocking.
+*
+* With an analysis port, we do not check if communication is done or not. That
+* means we can only use functions in analysis ports because they cannot consume
+* time.
+*
+* This is one of the more important differences between them. 
+*
+* uvm_analysis_port #(datatype)
+* uvm_analysis_imp #(datatype, class)
+*
+* port.write(data);
+*
+* virtual function void write(data);
+* endfunction
+*
+*      Port                   Export 
+*  +----------+            +------------+
+*  |          |            |            |
+*  | Producer |  --------> | Consumer 0 |
+*  |          |            |            |
+*  +----------+            +------------+
+*       |                     Export 
+*       |                  +------------+
+*       |                  |            |
+*       +----------------> | Consumer 1 |
+*                          |            |
+*                          +------------+
+*
+*  we make the connections in the connect_phase the same way we have
+*  p.port.connect(c1.imp);
+*  p.port.connect(c2.imp);
+*
+*/
+module tb_analysis;
+  initial begin
+    run_test("test_analysis");
+  end
+endmodule
