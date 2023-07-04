@@ -271,10 +271,20 @@ class test_env_mult_phase extends uvm_test;
   endfunction
 endclass
 
+class draintime_env extends uvm_env;
+  `uvm_component_utils(draintime_env)
+
+  function new(string name = "draintime_env", uvm_component parent);
+    super.new(name, parent);
+  endfunction
+endclass
+
+
 
 class test_draintime extends uvm_test;
   `uvm_component_utils(test_draintime)
 
+  draintime_env e;
 
   function new(string path = "test_draintime", uvm_component parent = null);
     super.new(path, parent);
@@ -282,13 +292,24 @@ class test_draintime extends uvm_test;
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+    e = draintime_env::type_id::create("e", this);
     `uvm_info("test_draintime", "Test Draintime Build Phase Executed", UVM_NONE);
   endfunction
 
-  task main_phase(uvm_phase phase);
+  function void end_of_elaboration_phase(uvm_phase phase);
+    uvm_phase main_phase;
+    super.end_of_elaboration_phase(phase);
 
+    // This grabs the main phase object
+    main_phase = phase.find_by_name("main", 0);
+
+    // The main_phase now specifically has 100ns of drain time
+    main_phase.phase_done.set_drain_time(this, 300);
+  endfunction
+
+  task main_phase(uvm_phase phase);
     // As a result, when the main_phase ends, we will wait another 200ns
-    phase.phase_done.set_drain_time(this, 200ns);
+    //  phase.phase_done.set_drain_time(this, 200ns);
 
     phase.raise_objection(this);
     `uvm_info("test_draintime", "Test Draintime Main Phase Started", UVM_NONE);
