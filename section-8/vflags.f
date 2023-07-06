@@ -5,4 +5,5 @@
 ./src/sending_data_to_driver_p2.sv
 ./src/multiple_sequences_in_parallel.sv
 ./src/arbitration.sv
+./src/holding_sequences.sv
 ./src/section-8.sv

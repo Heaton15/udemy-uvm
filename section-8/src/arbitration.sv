@@ -134,7 +134,7 @@ class test_arbitration extends uvm_test;
 
     // Commenting this out, but this should work...
     // for some reason it won't let me pass the set_arbitration() options
-    //e.a.seq.set_arbitration(UVM_SEQ_ARB_WEIGHTED);
+    e.a.seq.set_arbitration(SEQ_ARB_RANDOM);
 
     fork
       repeat (5)
