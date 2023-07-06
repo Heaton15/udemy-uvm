@@ -132,10 +132,14 @@ class test_arbitration extends uvm_test;
   virtual task run_phase(uvm_phase phase);
     phase.raise_objection(this);
 
-    e.a.seq.set_arbitration(UVM_SEQ_ARB_WEIGHTED);
+    // Commenting this out, but this should work...
+    // for some reason it won't let me pass the set_arbitration() options
+    //e.a.seq.set_arbitration(UVM_SEQ_ARB_WEIGHTED);
+
     fork
-      s0.start(e.a.seq, null, 100);  // sequencer, parent sequence, priority, call_pre_post
-      s1.start(e.a.seq, null, 200); // The combined threshold amount will become 300
+      repeat (5)
+        s0.start(e.a.seq, null, 100);  // sequencer, parent sequence, priority, call_pre_post
+      repeat (5) s1.start(e.a.seq, null, 200);  // The combined threshold amount will become 300
       // Case 1: Threshold = 50, s0 will run first because 100 > 50
       // Case 2: Threshold = 250, s0 will not run, but s1 will not have 100
       // + 200 = 300 > 250 so it will run. 
