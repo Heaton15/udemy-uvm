@@ -65,3 +65,10 @@ module tb_arbitration;
     run_test("test_arbitration");
   end
 endmodule
+
+// This testbench demos how to hold the access of the sequencer
+module tb_hold;
+  initial begin
+    run_test("test_hold");
+  end
+endmodule
