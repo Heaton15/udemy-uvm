@@ -121,7 +121,8 @@ class monitor extends uvm_monitor;
       t.a = aif.a;
       t.b = aif.b;
       t.y = aif.y;
-      `uvm_info("MON", $sformatf("Data send to scoreboard a: %0d, b: %0d, y: %0d", t.a, t.b, t.y), UVM_NONE);
+      `uvm_info("MON", $sformatf("Data send to scoreboard a: %0d, b: %0d, y: %0d", t.a, t.b, t.y),
+                UVM_NONE);
       send.write(t);
     end
   endtask
@@ -227,6 +228,167 @@ class test extends uvm_test;
     // the agent
     gen.start(e.a.seqr);
     #50ns;  // Can also use drain time 
+    phase.drop_objection(this);
+  endtask
+endclass
+
+//*******************************
+//        Adder_seq data
+//*******************************
+
+class driver_seq extends uvm_driver #(transaction);
+  `uvm_component_utils(driver_seq)
+
+  function new(input string name = "driver_seq", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  transaction tc;
+  virtual adder_seq_if aif;  // The driver_seq must have the interface to connect to the DUT.
+
+  task reset_dut();
+    aif.rst <= 1'b1;
+    aif.a   <= 0;
+    aif.b   <= 0;
+    repeat (5) @(posedge aif.clk);
+    aif.rst <= 1'b0;
+    `uvm_info("DRV", "Reset Done", UVM_NONE);
+  endtask
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    tc = transaction::type_id::create("tc");
+
+    if (!uvm_config_db#(virtual adder_seq_if)::get(this, "", "aif", aif))
+      `uvm_error("DRV", "Unable to access uvm_config_db");
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    reset_dut();  // Start by resetting the system
+    forever begin
+      seq_item_port.get_next_item(tc);
+      // When triggering a interface use non-blocking
+      aif.a <= tc.a;
+      aif.b <= tc.b;
+      `uvm_info("DRV", $sformatf("Trigger DUT a: %0d, b: %0d", tc.a, tc.b), UVM_NONE);
+      seq_item_port.item_done();
+      repeat (2) @(posedge aif.clk);
+    end
+  endtask
+endclass
+
+class monitor_seq extends uvm_monitor;
+  `uvm_component_utils(monitor_seq)
+
+  uvm_analysis_port #(transaction) send;
+
+  function new(input string inst = "monitorseq", uvm_component parent = null);
+    super.new(inst, parent);
+    send = new("send", this);
+  endfunction
+
+  transaction t;
+
+  // The monitor_seq needs to have a interface that we can tap as well.
+  virtual adder_seq_if aif;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    t = transaction::type_id::create("t");
+    if (!uvm_config_db#(virtual adder_seq_if)::get(this, "", "aif", aif))
+      `uvm_error("MON", "Unable to access uvm_config_db");
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    @(negedge aif.rst);  // We wait for reset to de-assert before we start monitoring
+    forever begin
+      repeat (2) begin
+        @(posedge aif.clk);  // In the driver, we wait 2 clock ticks to apply transaction, so wait 2
+      end
+      t.a = aif.a;
+      t.b = aif.b;
+      t.y = aif.y;
+      `uvm_info("MON", $sformatf("Data send to scoreboard a: %0d, b: %0d, y: %0d", t.a, t.b, t.y),
+                UVM_NONE);
+      // Notice that the scoreboardi s called by this function basically. The
+      // monitor "writes" a result to the scoreboard and it checks if it is
+      // correct. 
+      send.write(t);
+    end
+  endtask
+endclass
+
+class agent_seq extends uvm_agent;
+  `uvm_component_utils(agent_seq)
+
+  function new(input string name = "agent_seq", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  monitor_seq m;
+  driver_seq d;
+
+  // In the agent_seq, we add the sequencer that does the connections to the driver
+  uvm_sequencer #(transaction) seqr;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    m = monitor_seq::type_id::create("MON", this);
+    d = driver_seq::type_id::create("DRV", this);
+    seqr = uvm_sequencer#(transaction)::type_id::create("SEQ", this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    // Driver to sequencer connection yee haw
+    d.seq_item_port.connect(seqr.seq_item_export);
+  endfunction
+endclass
+
+class env_seq extends uvm_env;
+  `uvm_component_utils(env_seq)
+
+  function new(input string name = "ENV", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  scoreboard s;
+  agent_seq a;
+
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    s = scoreboard::type_id::create("s", this);
+    a = agent_seq::type_id::create("a", this);
+  endfunction
+
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    // Here, we connect the uvm_analysis_port to the imp in the scoreboard.
+    a.m.send.connect(s.recv);
+  endfunction
+endclass
+
+class test_seq extends uvm_test;
+  `uvm_component_utils(test_seq)
+
+  function new(input string name = "TEST", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  generator gen;
+  env_seq e;
+
+  virtual function void build_phase(uvm_phase phase);
+    gen = generator::type_id::create("gen");  // sequence does not need this
+    e   = env_seq::type_id::create("e", this);
+  endfunction
+
+  virtual task run_phase(uvm_phase phase);
+    phase.raise_objection(this);
+    // Notice here how we start the sequence and connect it to the sequncer in
+    // the agent
+    gen.start(e.a.seqr);
+    #60ns;  // Can also use drain time 
     phase.drop_objection(this);
   endtask
 endclass
