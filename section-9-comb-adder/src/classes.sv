@@ -379,6 +379,7 @@ class test_seq extends uvm_test;
   env_seq e;
 
   virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase)
     gen = generator::type_id::create("gen");  // sequence does not need this
     e   = env_seq::type_id::create("e", this);
   endfunction
